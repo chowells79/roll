@@ -2,6 +2,7 @@
 module Main where
 
 import Data.Char (isDigit)
+import Data.List (intercalate)
 import System.Environment (getArgs)
 
 import Text.Earley
@@ -55,20 +56,22 @@ check d = case d of
     pair sym op f1 f2 g0 = let (h1, e1, v1, g1) = f1 g0
                                (h2, e2, v2, g2) = f2 g1
                            in (h1 ++ h2, e1 ++ sym ++ e2, op v1 v2, g2)
-    val x str | x < 1    = Failure [show x ++
-                                    " is invalid for the " ++
-                                    str ++ " of rolled dice"]
+    val x str | x < 1 = Failure [ show x ++ " is invalid for the " ++ str ++
+                                  " of rolled dice" ]
               | otherwise = pure x
-    roll num faces g0 = let (h, e, v, g1) = go num faces ("", "", 0, g0)
-                            msg = ["Rolling " ++ show num ++ "d" ++
-                                   show faces ++ ": " ++ h]
-                            expr = if num > 1 then "(" ++ e ++ ")" else e
-                        in (msg, expr, v, g1)
-    go c f (h, e, v, g0)
-        | c == 0    = (zipWith const h (drop 2 h), init e, v, g0)
+    roll num faces g0 =
+        let (dice, g1) = multidice num faces ([], g0)
+            shown = map show dice
+            msg = [ "Rolling " ++ show num ++ "d" ++ show faces ++ ": " ++
+                    intercalate ", " shown ]
+            expr | num > 1   = "(" ++ intercalate "+" shown ++ ")"
+                 | otherwise = concat shown
+        in (msg, expr, sum dice, g1)
+    multidice c f r0@(h, g0)
+        | c == 0    = r0
         | otherwise = let (n, g1) = uniformR (1, f) g0
-                          r = (show n ++ ", " ++ h, show n ++ "+" ++ e, n + v, g1)
-                      in go (c - 1) f r
+                          r1 = (n : h, g1)
+                      in multidice (c - 1) f r1
 
 execRoll :: String -> IO ()
 execRoll s = do
@@ -83,7 +86,7 @@ execRoll s = do
             Success doRoll -> do
                 g <- newStdGen
                 let (hist, filled, res, _) = doRoll g
-                putStrLn $ "Executing " ++ s
+                putStrLn s
                 mapM_ putStrLn hist
                 putStrLn $ filled ++ " = " ++ show res
                 putStrLn ""
