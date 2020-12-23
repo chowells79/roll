@@ -7,7 +7,7 @@ version:             0.1.0.0
 -- synopsis:
 -- description:
 -- bug-reports:
--- license:
+license:             Apache-2.0
 license-file:        LICENSE
 author:              Carl Howells
 maintainer:          chowells79@gmail.com
