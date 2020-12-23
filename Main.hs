@@ -55,9 +55,9 @@ check d = case d of
     pair sym op f1 f2 g0 = let (h1, e1, v1, g1) = f1 g0
                                (h2, e2, v2, g2) = f2 g1
                            in (h1 ++ h2, e1 ++ sym ++ e2, op v1 v2, g2)
-    val x str | x < 1     = Failure [show x ++
-                                     " is invalid for the " ++
-                                     str ++ " of rolled dice"]
+    val x str | x < 1    = Failure [show x ++
+                                    " is invalid for the " ++
+                                    str ++ " of rolled dice"]
               | otherwise = pure x
     roll num faces g0 = let (h, e, v, g1) = go num faces ("", "", 0, g0)
                             msg = ["Rolling " ++ show num ++ "d" ++
