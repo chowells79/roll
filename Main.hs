@@ -2,12 +2,14 @@
 module Main where
 
 import Data.Char (isDigit)
-import Data.List (intercalate)
 import System.Environment (getArgs)
+
+import Data.List
 
 import Text.Earley
 import Control.Applicative
 import Control.Applicative.Combinators
+import Control.Monad
 
 import System.Random
 
@@ -32,6 +34,7 @@ diceG = mdo
         dieRoll  = Roll <$> option 1 number <* token 'd' <*> number
         number   = read <$> some (satisfy isDigit)
     return sums
+
 
 parseDescriptor :: String -> Validation String DiceRoll
 parseDescriptor s = case fullParses (parser diceG) s of
@@ -62,7 +65,7 @@ check d = case d of
     roll num faces g0 =
         let (dice, g1) = multidice num faces ([], g0)
             shown = map show dice
-            msg = [ "Rolling " ++ show num ++ "d" ++ show faces ++ ": " ++
+            msg = [ "Rolling " ++ show num ++ "d" ++ show faces ++ ":  " ++
                     intercalate ", " shown ]
             expr | num > 1   = "(" ++ intercalate "+" shown ++ ")"
                  | otherwise = concat shown
@@ -72,6 +75,7 @@ check d = case d of
         | otherwise = let (n, g1) = uniformR (1, f) g0
                           r1 = (n : h, g1)
                       in multidice (c - 1) f r1
+
 
 execRoll :: String -> IO ()
 execRoll s = do
@@ -86,13 +90,13 @@ execRoll s = do
             Success doRoll -> do
                 g <- newStdGen
                 let (hist, filled, res, _) = doRoll g
-                putStrLn s
-                mapM_ putStrLn hist
+                putStrLn $ "  * Calculating " ++ s
+                when (length hist > 1) $ mapM_ putStrLn hist
                 putStrLn $ filled ++ " = " ++ show res
-                putStrLn ""
 
 
 main :: IO ()
 main = do
     args <- getArgs
-    mapM_ execRoll args
+    putStrLn ""
+    mapM_ ((>> putStrLn "") . execRoll) args
