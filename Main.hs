@@ -30,7 +30,7 @@ diceDescriptorG = mdo
         constant = Constant <$> positive
         dieRoll  = Roll <$> option 1 positive <* token 'd' <*> positive
         positive = read <$> many (token '0') <> posDigit <> digits
-        posDigit = pure <$> satisfy (\c -> isDigit c && c /= '0')
+        posDigit = (:[]) <$> satisfy (\c -> isDigit c && c /= '0')
         digits   = many (satisfy isDigit)
     return sums
 
@@ -75,7 +75,8 @@ execRoll s = do
     let parsed = parseDescriptor s
     case parsed of
         Left err -> do
-            putStrLn $ "unable to parse " ++ s ++ " -- " ++ err
+            putStrLn $ "  * unable to parse " ++ s
+            putStrLn err
             putStrLn ""
         Right expr -> do
             g <- newStdGen
