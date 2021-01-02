@@ -9,11 +9,8 @@ import Data.List
 import Text.Earley
 import Control.Applicative
 import Control.Applicative.Combinators
-import Control.Monad
 
 import System.Random
-
-import Data.Validation
 
 data DiceRoll = Constant Integer
               | Roll Integer Integer
@@ -23,57 +20,53 @@ data DiceRoll = Constant Integer
     deriving (Show, Eq, Ord)
 
 
-diceG :: Grammar r (Prod r () Char DiceRoll)
-diceG = mdo
+diceDescriptorG :: Grammar r (Prod r () Char DiceRoll)
+diceDescriptorG = mdo
     sums    <- rule $ flip ($) <$> sums <*> ops <*> product <|> product
     product <- rule $ Product <$> product <* mult <*> term <|> term
     term    <- rule $ constant <|> dieRoll
     let ops      = Sum <$ token '+' <|> Diff <$ token '-'
         mult     = token 'x' <|> token '*'
-        constant = Constant <$> number
-        dieRoll  = Roll <$> option 1 number <* token 'd' <*> number
-        number   = read <$> some (satisfy isDigit)
+        constant = Constant <$> positive
+        dieRoll  = Roll <$> option 1 positive <* token 'd' <*> positive
+        positive = read <$> many (token '0') <> posDigit <> digits
+        posDigit = pure <$> satisfy (\c -> isDigit c && c /= '0')
+        digits   = many (satisfy isDigit)
     return sums
 
 
-parseDescriptor :: String -> Validation String DiceRoll
-parseDescriptor s = case fullParses (parser diceG) s of
-    ([], rep) -> Failure $ "Invalid input: " ++ msg rep
-    ([x], _)  -> Success x
+parseDescriptor :: String -> Either String DiceRoll
+parseDescriptor input = case fullParses (parser diceDescriptorG) input of
+    ([], rep) -> Left $ "Invalid input: " ++ msg rep
+    ([x], _)  -> Right x
     (xs, _)   -> error $ "Ambiguous parse, this is an internal error: " ++
-                 show s ++ " became " ++ show xs
+                 show input ++ " became " ++ show xs
   where
     msg (Report _ _ u) = if null u then "input was incomplete."
-                         else "error parsing at " ++ u
+                         else "didn't understand input somewhere around " ++ u
 
 
-check :: RandomGen g => DiceRoll
-      -> Validation [String] (g -> ([String], String, Integer, g))
-check d = case d of
-    Constant x -> Success $ \g -> ([], show x, x, g)
-    Sum d1 d2 -> liftA2 (pair "+" (+)) (check d1) (check d2)
-    Diff d1 d2 -> liftA2 (pair "-" (-)) (check d1) (check d2)
-    Product d1 d2 -> liftA2 (pair "x" (*)) (check d1) (check d2)
-    Roll num faces -> liftA2 roll (val num "count") (val faces "faces")
+run :: RandomGen g => DiceRoll -> g -> (String, Integer, g)
+run d g0 = case d of
+    Constant x -> (show x, x, g0)
+    Sum d1 d2 -> pair "+" (+) d1 d2
+    Diff d1 d2 -> pair "-" (-) d1 d2
+    Product d1 d2 -> pair "x" (*) d1 d2
+    Roll num faces -> roll num faces
   where
-    pair sym op f1 f2 g0 = let (h1, e1, v1, g1) = f1 g0
-                               (h2, e2, v2, g2) = f2 g1
-                           in (h1 ++ h2, e1 ++ sym ++ e2, op v1 v2, g2)
-    val x str | x < 1 = Failure [ show x ++ " is invalid for the " ++ str ++
-                                  " of rolled dice" ]
-              | otherwise = pure x
-    roll num faces g0 =
-        let (dice, g1) = multidice num faces ([], g0)
-            shown = map show dice
-            msg = [ "Rolling " ++ show num ++ "d" ++ show faces ++ ":  " ++
-                    intercalate ", " shown ]
-            expr | num > 1   = "(" ++ intercalate "+" shown ++ ")"
-                 | otherwise = concat shown
-        in (msg, expr, sum dice, g1)
-    multidice c f r0@(h, g0)
+    pair sym op d0 d1 = let (e1, v1, g1) = run d0 g0
+                            (e2, v2, g2) = run d1 g1
+                        in (e1 ++ sym ++ e2, op v1 v2, g2)
+    roll num faces = (expr, sum dice, g1)
+      where
+        (dice, g1) = multidice num faces ([], g0)
+        shown = map show dice
+        expr | num > 1   = "(" ++ intercalate "+" shown ++ ")"
+             | otherwise = concat shown
+    multidice c f r0@(h, g)
         | c == 0    = r0
-        | otherwise = let (n, g1) = uniformR (1, f) g0
-                          r1 = (n : h, g1)
+        | otherwise = let (n, g') = uniformR (1, f) g
+                          r1      = (n : h, g')
                       in multidice (c - 1) f r1
 
 
@@ -81,22 +74,20 @@ execRoll :: String -> IO ()
 execRoll s = do
     let parsed = parseDescriptor s
     case parsed of
-        Failure err -> do
+        Left err -> do
             putStrLn $ "unable to parse " ++ s ++ " -- " ++ err
             putStrLn ""
-        Success expr -> case check expr of
-            Failure errs -> putStrLn $
-                            "unable to run " ++ s ++ ", " ++ show errs
-            Success doRoll -> do
-                g <- newStdGen
-                let (hist, filled, res, _) = doRoll g
-                putStrLn $ "  * Calculating " ++ s
-                when (length hist > 1) $ mapM_ putStrLn hist
-                putStrLn $ filled ++ " = " ++ show res
+        Right expr -> do
+            g <- newStdGen
+            let (filled, res, _) = run expr g
+            putStrLn $ "  * Rolling " ++ s
+            putStrLn $ if all isDigit filled then filled
+                       else filled ++ " = " ++ show res
+            putStrLn ""
 
 
 main :: IO ()
 main = do
     args <- getArgs
     putStrLn ""
-    mapM_ ((>> putStrLn "") . execRoll) args
+    mapM_ execRoll args
