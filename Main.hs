@@ -5,15 +5,16 @@ import Data.Char (isDigit)
 import System.Environment (getArgs)
 
 import Data.List
+import Control.Monad
 
 import Text.Earley
 import Control.Applicative
 import Control.Applicative.Combinators
 
-import System.Random
+import System.Random.Stateful
 
-data DiceRoll = Constant Integer
-              | Roll Integer Integer
+data DiceRoll = Constant Int
+              | Roll Int Int
               | Sum DiceRoll DiceRoll
               | Diff DiceRoll DiceRoll
               | Product DiceRoll DiceRoll
@@ -46,28 +47,26 @@ parseDescriptor input = case fullParses (parser diceDescriptorG) input of
                          else "didn't understand input somewhere around " ++ u
 
 
-run :: RandomGen g => DiceRoll -> g -> (String, Integer, g)
-run d g0 = case d of
-    Constant x -> (show x, x, g0)
-    Sum d1 d2 -> pair "+" (+) d1 d2
-    Diff d1 d2 -> pair "-" (-) d1 d2
-    Product d1 d2 -> pair "x" (*) d1 d2
-    Roll num faces -> roll num faces
+run :: StatefulGen g m => DiceRoll -> g -> m (String, Int)
+run d g = go d
   where
-    pair sym op d0 d1 = let (e1, v1, g1) = run d0 g0
-                            (e2, v2, g2) = run d1 g1
-                        in (e1 ++ sym ++ e2, op v1 v2, g2)
-    roll num faces = (expr, sum dice, g1)
-      where
-        (dice, g1) = multidice num faces ([], g0)
-        shown = map show dice
-        expr | num > 1   = "(" ++ intercalate "+" shown ++ ")"
-             | otherwise = concat shown
-    multidice c f r0@(h, g)
-        | c == 0    = r0
-        | otherwise = let (n, g') = uniformR (1, f) g
-                          r1      = (n : h, g')
-                      in multidice (c - 1) f r1
+    go (Constant x)     = pure (show x, x)
+    go (Sum d1 d2)      = pair "+" (+) d1 d2
+    go (Diff d1 d2)     = pair "-" (-) d1 d2
+    go (Product d1 d2)  = pair "x" (*) d1 d2
+    go (Roll num faces) = roll num faces
+
+    pair sym op d0 d1 = do
+        (exp1, val1) <- go d0
+        (exp2, val2) <- go d1
+        pure (exp1 ++ sym ++ exp2, op val1 val2)
+
+    roll num faces = do
+        dice <- replicateM num (uniformRM (1, faces) g)
+        let shown = map show dice
+            expr | num > 1   = "(" ++ intercalate "+" shown ++ ")"
+                 | otherwise = concat shown
+        pure (expr, sum dice)
 
 
 execRoll :: String -> IO ()
@@ -78,9 +77,9 @@ execRoll s = do
             putStrLn $ "  * unable to parse " ++ s
             putStrLn err
             putStrLn ""
-        Right expr -> do
+        Right roll -> do
             g <- newStdGen
-            let (filled, res, _) = run expr g
+            let (filled, res) = runStateGen_ g (run roll)
             putStrLn $ "  * Rolling " ++ s
             putStrLn $ if all isDigit filled then filled
                        else filled ++ " = " ++ show res
