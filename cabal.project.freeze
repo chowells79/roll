@@ -1,3 +1,4 @@
+active-repositories: hackage.haskell.org:merge
 constraints: any.Earley ==0.13.0.1,
              Earley -examples,
              any.ListLike ==4.7.4,
@@ -10,7 +11,7 @@ constraints: any.Earley ==0.13.0.1,
              any.dlist ==1.0,
              dlist -werror,
              any.fmlist ==0.9.4,
-             any.ghc-boot-th ==8.10.3,
+             any.ghc-boot-th ==8.10.4,
              any.ghc-prim ==0.6.1,
              any.integer-gmp ==1.0.3.0,
              any.mtl ==2.2.2,
@@ -26,5 +27,6 @@ constraints: any.Earley ==0.13.0.1,
              any.text ==1.2.4.1,
              any.transformers ==0.5.6.2,
              any.utf8-string ==1.0.2,
-             any.vector ==0.12.2.0,
+             any.vector ==0.12.3.0,
              vector +boundschecks -internalchecks -unsafechecks -wall
+index-state: hackage.haskell.org 2021-06-02T04:54:25Z

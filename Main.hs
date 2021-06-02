@@ -4,8 +4,9 @@ module Main where
 import Data.Char (isDigit)
 import System.Environment (getArgs)
 
-import Data.List
-import Control.Monad
+import Data.Function ((&))
+import Data.List (intercalate)
+import Control.Monad (replicateM)
 
 import Text.Earley
 import Control.Applicative
@@ -23,7 +24,7 @@ data DiceRoll = Constant Int
 
 diceDescriptorG :: Grammar r (Prod r () Char DiceRoll)
 diceDescriptorG = mdo
-    sums    <- rule $ flip ($) <$> sums <*> ops <*> product <|> product
+    sums    <- rule $ (&) <$> sums <*> ops <*> product <|> product
     product <- rule $ Product <$> product <* mult <*> term <|> term
     term    <- rule $ constant <|> dieRoll
     let ops      = Sum <$ token '+' <|> Diff <$ token '-'
@@ -43,8 +44,9 @@ parseDescriptor input = case fullParses (parser diceDescriptorG) input of
     (xs, _)   -> error $ "Ambiguous parse, this is an internal error: " ++
                  show input ++ " became " ++ show xs
   where
-    msg (Report _ _ u) = if null u then "input was incomplete."
-                         else "didn't understand input somewhere around " ++ u
+    msg (Report _ _ u)
+        | null u = "input was incomplete."
+        | otherwise = "didn't understand input somewhere around " ++ u
 
 
 run :: StatefulGen g m => DiceRoll -> g -> m (String, Int)
@@ -70,20 +72,18 @@ run d g = go d
 
 
 execRoll :: String -> IO ()
-execRoll s = do
-    let parsed = parseDescriptor s
-    case parsed of
-        Left err -> do
-            putStrLn $ "  * unable to parse " ++ s
-            putStrLn err
-            putStrLn ""
-        Right roll -> do
-            g <- newStdGen
-            let (filled, res) = runStateGen_ g (run roll)
-            putStrLn $ "  * Rolling " ++ s
-            putStrLn $ if all isDigit filled then filled
-                       else filled ++ " = " ++ show res
-            putStrLn ""
+execRoll s = case parseDescriptor s of
+    Left err -> do
+        putStrLn $ "  * unable to parse " ++ s
+        putStrLn err
+        putStrLn ""
+    Right roll -> do
+        g <- newStdGen
+        let (filled, res) = runStateGen_ g (run roll)
+        putStrLn $ "  * Rolling " ++ s
+        putStrLn $ if all isDigit filled then filled
+                   else filled ++ " = " ++ show res
+        putStrLn ""
 
 
 main :: IO ()
