@@ -24,9 +24,9 @@ data DiceRoll
 
 diceDescriptorG :: Grammar r (Prod r () Char DiceRoll)
 diceDescriptorG = mdo
-    sums    <- rule $ sums <**> ops <*> product <|> product
-    product <- rule $ Product <$> product <* mult <*> term <|> term
-    term    <- rule $ constant <|> dieRoll
+    sums     <- rule $ sums <**> ops <*> products <|> products
+    products <- rule $ Product <$> products <* mult <*> term <|> term
+    term     <- rule $ constant <|> dieRoll
     let ops      = Sum <$ token '+' <|> Diff <$ token '-'
         mult     = token 'x' <|> token '*'
         constant = Constant <$> positive
