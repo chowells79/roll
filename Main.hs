@@ -4,27 +4,27 @@ module Main where
 import Data.Char (isDigit)
 import System.Environment (getArgs)
 
-import Data.Function ((&))
 import Data.List (intercalate)
+import Control.Applicative ((<**>))
 import Control.Monad (replicateM)
 
 import Text.Earley
-import Control.Applicative
 import Control.Applicative.Combinators
 
 import System.Random.Stateful
 
-data DiceRoll = Constant Int
-              | Roll Int Int
-              | Sum DiceRoll DiceRoll
-              | Diff DiceRoll DiceRoll
-              | Product DiceRoll DiceRoll
+data DiceRoll
+    = Constant Int
+    | Roll Int Int
+    | Sum DiceRoll DiceRoll
+    | Diff DiceRoll DiceRoll
+    | Product DiceRoll DiceRoll
     deriving (Show, Eq, Ord)
 
 
 diceDescriptorG :: Grammar r (Prod r () Char DiceRoll)
 diceDescriptorG = mdo
-    sums    <- rule $ (&) <$> sums <*> ops <*> product <|> product
+    sums    <- rule $ sums <**> ops <*> product <|> product
     product <- rule $ Product <$> product <* mult <*> term <|> term
     term    <- rule $ constant <|> dieRoll
     let ops      = Sum <$ token '+' <|> Diff <$ token '-'
@@ -45,7 +45,7 @@ parseDescriptor input = case fullParses (parser diceDescriptorG) input of
                  show input ++ " became " ++ show xs
   where
     msg (Report _ _ u)
-        | null u = "input was incomplete."
+        | null u    = "input was incomplete."
         | otherwise = "didn't understand input somewhere around " ++ u
 
 
@@ -59,16 +59,17 @@ run d g = go d
     go (Roll num faces) = roll num faces
 
     pair sym op d0 d1 = do
-        (exp1, val1) <- go d0
-        (exp2, val2) <- go d1
-        pure (exp1 ++ sym ++ exp2, op val1 val2)
+        (displayExp1, val1) <- go d0
+        (displayExp2, val2) <- go d1
+        pure (displayExp1 ++ sym ++ displayExp2, op val1 val2)
 
     roll num faces = do
         dice <- replicateM num (uniformRM (1, faces) g)
         let shown = map show dice
-            expr | num > 1   = "(" ++ intercalate "+" shown ++ ")"
-                 | otherwise = concat shown
-        pure (expr, sum dice)
+            displayExp
+                | num > 1   = "(" ++ intercalate "+" shown ++ ")"
+                | otherwise = concat shown
+        pure (displayExp, sum dice)
 
 
 execRoll :: String -> IO ()
