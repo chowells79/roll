@@ -100,8 +100,9 @@ main = do
 
 
 printVersion :: IO ()
-printVersion = do
-    let ver = "roll " ++ showVersion Roll.version
-        comp = Info.compilerName ++ " " ++ showVersion Info.fullCompilerVersion
-        env = Info.os ++ "-" ++ Info.arch
-    putStrLn $ ver ++ ", compiled with " ++ comp ++ " for " ++ env
+printVersion = putStrLn full
+  where
+    ver = "roll " ++ showVersion Roll.version
+    comp = Info.compilerName ++ " " ++ showVersion Info.fullCompilerVersion
+    env = Info.os ++ "-" ++ Info.arch
+    full = ver ++ ", compiled with " ++ comp ++ " for " ++ env
