@@ -13,6 +13,10 @@ import Control.Applicative.Combinators
 
 import System.Random.Stateful
 
+import qualified Paths_roll as Roll
+import Data.Version (showVersion)
+import qualified System.Info as Info
+
 data DiceRoll
     = Constant Int
     | Roll Int Int
@@ -90,5 +94,14 @@ execRoll s = case parseDescriptor s of
 main :: IO ()
 main = do
     args <- getArgs
-    putStrLn ""
-    mapM_ execRoll args
+    if args == ["-v"] || args == ["--version"]
+        then printVersion
+        else putStrLn "" >> mapM_ execRoll args
+
+
+printVersion :: IO ()
+printVersion = do
+    let ver = "roll " ++ showVersion Roll.version
+        comp = Info.compilerName ++ " " ++ showVersion Info.fullCompilerVersion
+        env = Info.os ++ "-" ++ Info.arch
+    putStrLn $ ver ++ ", compiled with " ++ comp ++ " for " ++ env
