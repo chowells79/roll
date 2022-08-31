@@ -1,7 +1,7 @@
 cabal-version:       >=1.10
 
 name:                roll
-version:             0.1.0.2
+version:             0.1.0.3
 license:             Apache-2.0
 license-file:        LICENSE
 author:              Carl Howells
@@ -13,6 +13,8 @@ executable roll
   main-is:             Main.hs
   ghc-options:         -Wall
   other-modules:       Paths_roll
+                       Dice
+                       Version
   build-depends:       base               >= 4.14 && <4.18,
                        Earley             >= 0.13.0 && < 0.14,
                        parser-combinators >= 1.2.1 && < 1.3,

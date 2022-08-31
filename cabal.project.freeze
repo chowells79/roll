@@ -12,7 +12,7 @@ constraints: any.Earley ==0.13.0.1,
              dlist -werror,
              any.fmlist ==0.9.4,
              any.ghc-bignum ==1.3,
-             any.ghc-boot-th ==9.4.1,
+             any.ghc-boot-th ==9.4.2,
              any.ghc-prim ==0.9.0,
              any.mtl ==2.2.2,
              any.parser-combinators ==1.2.1,
@@ -30,4 +30,4 @@ constraints: any.Earley ==0.13.0.1,
              any.vector ==0.13.0.0,
              vector +boundschecks -internalchecks -unsafechecks -wall,
              any.vector-stream ==0.1.0.0
-index-state: hackage.haskell.org 2022-08-14T01:52:17Z
+index-state: hackage.haskell.org 2022-08-31T16:48:50Z
