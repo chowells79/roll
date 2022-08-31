@@ -1,4 +1,3 @@
-{-# Language TemplateHaskell #-}
 module Main where
 
 import System.Environment (getArgs)
@@ -11,5 +10,5 @@ main :: IO ()
 main = do
     args <- getArgs
     if args == ["-v"] || args == ["--version"]
-        then putStrLn $$(versionExp)
+        then putStrLn versionStr
         else putStrLn "" >> mapM_ execRoll args
