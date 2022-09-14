@@ -11,4 +11,4 @@ main = do
     args <- getArgs
     if args == ["-v"] || args == ["--version"]
         then putStrLn versionStr
-        else putStrLn "" >> mapM_ execRoll args
+        else mapM_ execRoll args

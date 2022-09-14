@@ -72,16 +72,20 @@ run d g = go d
         pure (displayExp, sum dice)
 
 
+runIO :: DiceRoll -> IO (String, Int)
+runIO dice = do
+    stdGen <- newStdGen
+    ioGen <- newIOGenM stdGen
+    run dice ioGen
+
+
 execRoll :: String -> IO ()
 execRoll s = case parseDescriptor s of
     Left err -> do
         putStrLn $ "  * unable to parse " ++ s
         putStrLn err
-        putStrLn ""
-    Right roll -> do
-        g <- newStdGen
-        let (filled, res) = runStateGen_ g (run roll)
+    Right dice -> do
+        (filled, res) <- runIO dice
         putStrLn $ "  * Rolling " ++ s
         putStrLn $ if all isDigit filled then filled
                    else filled ++ " = " ++ show res
-        putStrLn ""
