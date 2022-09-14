@@ -1,0 +1,3 @@
+packages: roll.cabal
+
+constraints: transformers >=0.6
