@@ -79,6 +79,11 @@ runIO dice = do
     run dice ioGen
 
 
+-- interactive debugging helper, not used internally
+execRaw :: String -> IO (Either String (String, Int))
+execRaw = traverse runIO . parseDescriptor
+
+
 execRoll :: String -> IO ()
 execRoll s = case parseDescriptor s of
     Left err -> do
