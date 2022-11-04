@@ -1,6 +1,6 @@
-cabal-version:       3.8
+cabal-version:       3.6
 name:                roll
-version:             0.1.1.1
+version:             0.1.2.0
 license:             Apache-2.0
 license-file:        LICENSE
 author:              Carl Howells
@@ -13,9 +13,10 @@ extra-source-files:  CHANGELOG.md
 common shared-settings
   default-language:    Haskell2010
   ghc-options:         -fno-full-laziness -Wall
+  build-depends:       base >= 4.14 && <4.18
 
 
-library
+library roll-internal
   import:              shared-settings
   hs-source-dirs:      lib
   -- Set the module loaded by cabal repl
@@ -25,8 +26,7 @@ library
                        Version
   other-modules:       Paths_roll
   autogen-modules:     Paths_roll
-  build-depends:       base               >= 4.14 && <4.18,
-                       Earley             >= 0.13.0 && < 0.14,
+  build-depends:       Earley             >= 0.13.0 && < 0.14,
                        parser-combinators >= 1.2.1 && < 1.4,
                        random             >= 1.2.0 && < 1.3
 
@@ -35,5 +35,4 @@ executable roll
   hs-source-dirs:      src
   main-is:             Main.hs
   ghc-options:         -Wall
-  build-depends:       base               >= 4.14 && <4.18,
-                       roll
+  build-depends:       roll:roll-internal
