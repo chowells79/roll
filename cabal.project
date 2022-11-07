@@ -1,3 +1,7 @@
 packages: roll.cabal
 
 constraints: transformers >=0.6
+
+-- This is redundant, but I'm throwing it in as an example
+package Earley
+  flags: -examples
