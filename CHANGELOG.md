@@ -1,5 +1,9 @@
 # Revision history for roll
 
+## 0.1.2.2
+
+* Updated to require GHC 9.4.4
+
 ## 0.1.0.10 -- 2022-09-16
 
 * I noticed there's a changelog
