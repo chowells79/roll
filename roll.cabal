@@ -13,7 +13,7 @@ extra-source-files:  CHANGELOG.md
 common shared-settings
   default-language:    Haskell2010
   ghc-options:         -fno-full-laziness -Wall
-  build-depends:       base >= 4.14 && <4.18
+  build-depends:       base >= 4.14 && <5
 
 
 library roll-internal
